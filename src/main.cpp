@@ -17,7 +17,7 @@ System Overview & Assumptions
 */
 
 
-
+//Includes and Defines
 #include <Arduino.h>
 #include <math.h> 
 
@@ -38,15 +38,15 @@ const unsigned long STAGE_DWELL_MS = 300000UL; // 5 minutes
 
 
 void setup() {
-  Serial.begin(115200);
-  SetupPWM();
-  SetupADC_GPIO();
-  lastStageChangeMs = millis();
+  Serial.begin(115200); // Start serial communication for debugging
+  SetupPWM(); // Initialize PWM for damper control
+  SetupADC_GPIO(); // Initialize ADC and GPIO for temperature sensing and heating control
+  lastStageChangeMs = millis(); // Initialize last stage change time
 
 }
 
 void loop() {
-  updateSystemState();
+  updateSystemState(); // Update system state based on sensor readings and control logic
   delay(1000); // 1 Hz control loop
 }
 
@@ -102,7 +102,10 @@ void SetupADC_GPIO() {
   // enable ADC + start conversion
   ADCSRA |= (1<<ADEN) | (1<<ADSC);  
   // no auto-trigger
-  ADCSRA &= ~(1<<ADATE);             
+  ADCSRA &= ~(1<<ADATE);  
+  //setp ADC as input pins
+  DDRC &= ~(1<<PC0); // ADC0 - Room1
+  DDRC &= ~(1<<PC1); // ADC1 - Room2
 
 
   //=========  GPIO configuration  =============//
