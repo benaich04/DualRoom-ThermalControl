@@ -1,3 +1,23 @@
+/*
+================================================================================
+System Overview & Assumptions
+--------------------------------------------------------------------------------
+• Two rooms (Room1, Room2), each with its own temperature sensor and damper servo.
+• A single shared heating unit provides warm air to both rooms; dampers only admit cool ambient air (no hot air flow through dampers).
+• Heating is global (shared), cooling is independent (per-room via dampers).
+• Control logic:
+    - If a room is cold (<24.5 °C): heating turns ON (shared).
+    - If both cold → high heat; one cold → low heat; none cold → off.
+    - If a room is hot (>25.5 °C): its damper opens linearly (25 °C → 0%, 60 °C → 100%).
+• Safety:
+    - Sensor faults or >60 °C trigger Safe/Over-Temp mode → heat off, dampers open.
+• Summary:
+    Each room cools itself independently through its damper, while one central heater provides shared heating when needed.
+================================================================================
+*/
+
+
+
 #include <Arduino.h>
 #include <math.h> 
 
@@ -29,10 +49,6 @@ void loop() {
   updateSystemState();
   delay(1000); // 1 Hz control loop
 }
-
-
-
-
 
 
 
@@ -70,6 +86,8 @@ void SetupADC_GPIO() {
   ADMUX |= (1<<REFS0);
   ADMUX |= (1<<REFS1);
   // !! Input channel and Gain selection will be set in a separate function
+  //initialize the MUX to ADC 0 - room1
+  setMux (1);
   //ADC Prescaler : 8
   ADCSRA |= (1<<ADPS0);
   ADCSRA |= (1<<ADPS1);
@@ -106,7 +124,7 @@ void setMux (uint8_t rmNum) {
 
 float getTemp (uint8_t rmNum) {
   setMux(rmNum);
-
+  //since we are changing MUX, we have to wait for a cycle before reading the new value from the register
   // Dummy conversion
   ADCSRA |= (1 << ADSC);
   while (!(ADCSRA & (1 << ADIF)));
